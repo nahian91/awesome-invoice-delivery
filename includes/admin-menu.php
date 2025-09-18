@@ -15,7 +15,7 @@ function aipd_admin_menu() {
 }
 
 function aipd_main_page() {
-    $tab = isset($_GET['tab']) ? sanitize_text_field($_GET['tab']) : 'orders';
+    $tab = isset($_GET['tab']) ? sanitize_text_field($_GET['tab']) : 'general';
     ?>
     <div class="wrap">
         <h1 class="nav-tab-wrapper">

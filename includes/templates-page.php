@@ -38,12 +38,15 @@ function aipd_templates_page() {
         .aipd-section h2 { color:#0073aa;border-bottom:1px solid #eee;padding-bottom:5px;margin-top:0;}
         .template-option { display:inline-block; width:200px; margin:10px; vertical-align:top; text-align:center; }
         .template-option img { width:100%; height:auto; border:1px solid #ccc; border-radius:4px; margin-bottom:5px; }
-        .aipd-toggle{position:relative;display:inline-block;width:50px;height:24px;}
-        .aipd-toggle input{display:none;}
-        .aipd-slider{position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background-color:#ccc;transition:.4s;border-radius:24px;}
-        .aipd-slider:before{position:absolute;content:"";height:18px;width:18px;left:3px;bottom:3px;background:white;transition:.4s;border-radius:50%;}
-        input:checked + .aipd-slider{background:#0073aa;}
-        input:checked + .aipd-slider:before{transform:translateX(26px);}
+
+        /* Toggle Switch */
+        .aipd-toggle { position: relative; display: inline-block; width:50px; height:24px; }
+        .aipd-toggle input { display:none; }
+        .aipd-slider { position: absolute; cursor: pointer; top:0; left:0; right:0; bottom:0; background-color:#ccc; transition:.4s; border-radius:24px; }
+        .aipd-slider:before { position: absolute; content:""; height:18px; width:18px; left:3px; bottom:3px; background:white; transition:.4s; border-radius:50%; }
+        input:checked + .aipd-slider { background:#0073aa; }
+        input:checked + .aipd-slider:before { transform: translateX(26px); }
+
         /* Modal Styles */
         .aipd-modal { display:none; position:fixed; z-index:9999; left:0; top:0; width:100%; height:100%; overflow:auto; background:rgba(0,0,0,0.6);}
         .aipd-modal-content { background:#fff; margin:50px auto; padding:20px; border-radius:6px; width:80%; max-width:900px; position:relative;}
@@ -54,15 +57,22 @@ function aipd_templates_page() {
     <form method="post">
         <?php wp_nonce_field('aipd_save_templates','aipd_nonce'); ?>
 
-        <?php foreach($templates as $type => $tpls): ?>
+        <?php foreach($templates as $type => $tpls): 
+            $selected = $get('template_'.$type); // saved template
+            $first    = key($tpls); // first template ID
+        ?>
             <div class="aipd-section">
                 <h2><?php echo ucfirst($type); ?> Templates</h2>
-                <?php foreach($tpls as $id=>$tpl): ?>
+                <?php foreach($tpls as $id => $tpl): ?>
                     <div class="template-option">
-                        <label>
-                            <input type="radio" name="aipd_template_<?php echo esc_attr($type); ?>" value="<?php echo esc_attr($id); ?>" <?php checked($get('template_'.$type), $id); ?>>
-                            <?php echo esc_html($tpl['name']); ?>
+                        <label class="aipd-toggle">
+                            <input type="radio" 
+                                   name="aipd_template_<?php echo esc_attr($type); ?>" 
+                                   value="<?php echo esc_attr($id); ?>" 
+                                   <?php checked($selected ? $selected : $first, $id); ?>>
+                            <span class="aipd-slider"></span>
                         </label>
+                        <div style="margin-top:5px;"><?php echo esc_html($tpl['name']); ?></div>
                         <img src="<?php echo esc_url($tpl['preview']); ?>" alt="">
                         <button type="button" class="button aipd-preview-btn" data-template="<?php echo esc_attr($id); ?>" data-type="<?php echo esc_attr($type); ?>">Preview</button>
                     </div>
