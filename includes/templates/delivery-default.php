@@ -1,0 +1,121 @@
+<?php
+if (!defined('ABSPATH')) exit;
+
+// Include PHP QR Code library if not included yet
+if (!class_exists('QRcode')) {
+    require_once(plugin_dir_path(__FILE__) . 'phpqrcode/qrlib.php'); // ensure you have phpqrcode in your plugin
+}
+
+// Order URL for QR code (admin view)
+$order_url = admin_url('post.php?post=' . $order->get_id() . '&action=edit');
+// For public order view, use:
+// $order_url = $order->get_view_order_url();
+?>
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Delivery Note #<?php echo $order->get_id(); ?></title>
+    <style>
+        body { font-family: Arial, sans-serif; color: #333; margin: 20px; }
+        header { display:flex; justify-content: space-between; align-items:center; margin-bottom: 20px; }
+        header img { max-height: 60px; }
+        h1 { color: #0073aa; display: inline-block; margin-right: 15px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+        th { background: #f0f0f0; }
+        tbody tr:nth-child(even) { background: #f9f9f9; }
+        .section { margin-bottom: 20px; }
+        .notes { margin-top: 20px; }
+        .footer { text-align:center; margin-top: 50px; font-size: 12px; color: #777; }
+        .print-button { margin-bottom: 20px; }
+        @media print { .print-button { display: none; } }
+    </style>
+</head>
+<body>
+
+<button class="print-button" onclick="window.print();">Print Delivery Note</button>
+
+<header>
+    <div class="company-info">
+        <?php if(get_option('aipd_company_logo')): ?>
+            <img src="<?php echo esc_url(get_option('aipd_company_logo')); ?>" alt="Logo">
+        <?php endif; ?>
+        <p><strong><?php echo esc_html(get_option('aipd_company_name', 'Company Name')); ?></strong></p>
+        <p><?php echo esc_html(get_option('aipd_company_address', 'Address')); ?></p>
+        <p>Phone: <?php echo esc_html(get_option('aipd_company_phone', '0123456789')); ?></p>
+        <p>Email: <?php echo esc_html(get_option('aipd_company_email', 'email@example.com')); ?></p>
+    </div>
+    <div>
+        <h1>Delivery Note #<?php echo $order->get_id(); ?></h1>
+        <?php
+        // Generate QR Code image for the order URL
+        $tempDir = sys_get_temp_dir() . '/';
+        $fileName = 'delivery_'.$order->get_id().'.png';
+        $filePath = $tempDir . $fileName;
+        \QRcode::png($order_url, $filePath, QR_ECLEVEL_L, 3);
+        ?>
+        <img src="data:image/png;base64,<?php echo base64_encode(file_get_contents($filePath)); ?>" alt="QR Code">
+    </div>
+</header>
+
+<div class="section">
+    <p><strong>Order Date:</strong> <?php echo date_i18n(get_option('date_format','d/m/Y'), strtotime($order->get_date_created())); ?></p>
+    <p><strong>Payment Method:</strong> <?php echo esc_html($order->get_payment_method_title()); ?></p>
+    <p><strong>Shipping Method:</strong> <?php echo esc_html($order->get_shipping_method()); ?></p>
+</div>
+
+<div class="section">
+    <p><strong>Customer:</strong> <?php echo esc_html($order->get_formatted_billing_full_name()); ?></p>
+    <p><strong>Billing Address:</strong> <?php echo esc_html($order->get_formatted_billing_address()); ?></p>
+    <p><strong>Shipping Address:</strong> <?php echo esc_html($order->get_formatted_shipping_address()); ?></p>
+    <p><strong>Email:</strong> <?php echo esc_html($order->get_billing_email()); ?></p>
+    <p><strong>Phone:</strong> <?php echo esc_html($order->get_billing_phone()); ?></p>
+</div>
+
+<table>
+    <thead>
+        <tr>
+            <th>Qty</th>
+            <th>Product</th>
+            <?php if(get_option('aipd_show_sku',1)): ?><th>SKU</th><?php endif; ?>
+            <th>Price</th>
+            <th>Subtotal</th>
+        </tr>
+    </thead>
+    <tbody>
+        <?php foreach($order->get_items() as $item):
+            $product = $item->get_product();
+            $sku = $product ? $product->get_sku() : '';
+        ?>
+        <tr>
+            <td><?php echo esc_html($item->get_quantity()); ?></td>
+            <td><?php echo esc_html($item->get_name()); ?></td>
+            <?php if(get_option('aipd_show_sku',1)): ?><td><?php echo esc_html($sku); ?></td><?php endif; ?>
+            <td><?php echo wc_price($order->get_item_total($item,true)); ?></td>
+            <td><?php echo wc_price($item->get_total()); ?></td>
+        </tr>
+        <?php endforeach; ?>
+    </tbody>
+    <tfoot>
+        <tr>
+            <td colspan="<?php echo get_option('aipd_show_sku',1)?4:3; ?>" style="text-align:right;">Total:</td>
+            <td><?php echo wc_price($order->get_total()); ?></td>
+        </tr>
+    </tfoot>
+</table>
+
+<?php if($order->get_customer_note()): ?>
+<div class="notes">
+    <strong>Customer Notes:</strong>
+    <p><?php echo esc_html($order->get_customer_note()); ?></p>
+</div>
+<?php endif; ?>
+
+<div class="footer">
+    <?php echo esc_html(get_option('aipd_footer_text','Thank you for your order!')); ?><br>
+    Generated by <?php bloginfo('name'); ?>.
+</div>
+
+</body>
+</html>
